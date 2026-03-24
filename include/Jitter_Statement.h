@@ -101,6 +101,7 @@ namespace Jitter
 		OP_MD_MAX_W,
 
 		OP_MD_AND,
+		OP_MD_BITSELECT,
 		OP_MD_OR,
 		OP_MD_XOR,
 		OP_MD_NOT,
