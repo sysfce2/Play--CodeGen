@@ -635,6 +635,78 @@ void CCodeGen_AArch64::Emit_Md_ExpandW_VarVarCst(const STATEMENT& statement)
 	CommitSymbolRegisterMd(dst, dstReg);
 }
 
+void CCodeGen_AArch64::Emit_Md_BitSelect_RegVarVarVar(const STATEMENT& statement)
+{
+	auto dst = statement.dst->GetSymbol().get();
+	auto src1 = statement.src1->GetSymbol().get();
+	auto src2 = statement.src2->GetSymbol().get();
+	auto src3 = statement.src3->GetSymbol().get();
+
+	auto dstReg = PrepareSymbolRegisterDefMd(dst);
+
+	//If dst is equal to src3, src3 is a register,
+	//we can do everything with a single BSL instruction.
+	//Otherwise, we need to update dst with src3...
+	if(!dst->Equals(src3))
+	{
+		//dst is a reg, but if it's the same as src1 or src2
+		//we can't go further, since src1 or src2 is gonna be clobbered.
+		if(dst->Equals(src1) || dst->Equals(src2))
+		{
+			Emit_Md_BitSelect_VarVarVarVar(statement);
+			return;
+		}
+
+		if(src3->IsRegister())
+		{
+			m_assembler.Mov(dstReg, g_registersMd[src3->m_valueLow]);
+		}
+		else
+		{
+			LoadMemory128InRegister(dstReg, src3);
+		}
+	}
+
+	auto src1Reg = PrepareSymbolRegisterUseMd(src1);
+	auto src2Reg = PrepareSymbolRegisterUseMd(src2);
+
+	m_assembler.Bsl_16b(dstReg, src1Reg, src2Reg);
+
+	CommitSymbolRegisterMd(dst, dstReg);
+}
+
+void CCodeGen_AArch64::Emit_Md_BitSelect_VarVarVarVar(const STATEMENT& statement)
+{
+	auto dst = statement.dst->GetSymbol().get();
+	auto src1 = statement.src1->GetSymbol().get();
+	auto src2 = statement.src2->GetSymbol().get();
+	auto src3 = statement.src3->GetSymbol().get();
+
+	auto selReg = GetNextTempRegisterMd();
+	if(src3->IsRegister())
+	{
+		m_assembler.Mov(selReg, g_registersMd[src3->m_valueLow]);
+	}
+	else
+	{
+		LoadMemory128InRegister(selReg, src3);
+	}
+
+	auto src1Reg = PrepareSymbolRegisterUseMd(src1);
+	auto src2Reg = PrepareSymbolRegisterUseMd(src2);
+
+	m_assembler.Bsl_16b(selReg, src1Reg, src2Reg);
+
+	if(dst->IsRegister())
+	{
+		m_assembler.Mov(g_registersMd[dst->m_valueLow], selReg);
+	}
+	else
+	{
+		StoreRegisterInMemory128(dst, selReg);
+	}
+}
+
 void CCodeGen_AArch64::Emit_Md_PackHB_VarVarVar(const STATEMENT& statement)
 {
 	auto dst = statement.dst->GetSymbol().get();
@@ -813,6 +885,8 @@ CCodeGen_AArch64::CONSTMATCHER CCodeGen_AArch64::g_mdConstMatchers[] =
 	{ OP_MD_CMPGT_S,            MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_NIL, &CCodeGen_AArch64::Emit_Md_VarVarVar<MDOP_CMPGTS>                },
 	
 	{ OP_MD_AND,                MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_NIL, &CCodeGen_AArch64::Emit_Md_VarVarVar<MDOP_AND>                   },
+	{ OP_MD_BITSELECT,          MATCH_REGISTER128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_VARIABLE128, &CCodeGen_AArch64::Emit_Md_BitSelect_RegVarVarVar                },
+	{ OP_MD_BITSELECT,          MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_VARIABLE128, &CCodeGen_AArch64::Emit_Md_BitSelect_VarVarVarVar                },
 	{ OP_MD_OR,                 MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_NIL, &CCodeGen_AArch64::Emit_Md_VarVarVar<MDOP_OR>                    },
 	{ OP_MD_XOR,                MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_VARIABLE128,      MATCH_NIL, &CCodeGen_AArch64::Emit_Md_VarVarVar<MDOP_XOR>                   },
 	{ OP_MD_NOT,                MATCH_VARIABLE128,    MATCH_VARIABLE128,    MATCH_NIL,              MATCH_NIL, &CCodeGen_AArch64::Emit_Md_VarVar<MDOP_NOT>                      },

@@ -286,6 +286,15 @@ void CAArch64Assembler::Blr(REGISTER64 rn)
 	WriteWord(opcode);
 }
 
+void CAArch64Assembler::Bsl_16b(REGISTERMD rd, REGISTERMD rn, REGISTERMD rm)
+{
+	uint32 opcode = 0x6E601C00;
+	opcode |= (rd << 0);
+	opcode |= (rn << 5);
+	opcode |= (rm << 16);
+	WriteWord(opcode);
+}
+
 void CAArch64Assembler::Cbnz(REGISTER32 rt, LABEL label)
 {
 	CreateCompareBranchLabelReference(label, CONDITION_NE, rt);
