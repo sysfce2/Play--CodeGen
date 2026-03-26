@@ -833,6 +833,7 @@ namespace Jitter
 		void Emit_Md_Avx_MovMasked_VarVarVar(const STATEMENT&);
 
 		void Emit_Md_Avx_Not_VarVar(const STATEMENT&);
+		void Emit_Md_Avx_BitSelect_VarVarVarVar(const STATEMENT&);
 		void Emit_Md_Avx_Abs_VarVar(const STATEMENT&);
 		void Emit_Md_Avx_Neg_VarVar(const STATEMENT&);
 		void Emit_Md_Avx_AddSSW_VarVarVar(const STATEMENT&);

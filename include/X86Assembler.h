@@ -432,6 +432,7 @@ public:
 	void VpsubuswVo(XMMREGISTER, XMMREGISTER, const CAddress&);
 
 	void VpandVo(XMMREGISTER, XMMREGISTER, const CAddress&);
+	void VpandnVo(XMMREGISTER, XMMREGISTER, const CAddress&);
 	void VporVo(XMMREGISTER, XMMREGISTER, const CAddress&);
 	void VpxorVo(XMMREGISTER, XMMREGISTER, const CAddress&);
 

@@ -489,6 +489,25 @@ void CCodeGen_x86::Emit_Md_Avx_Not_VarVar(const STATEMENT& statement)
 	CommitSymbolRegisterMdAvx(dst, dstRegister);
 }
 
+void CCodeGen_x86::Emit_Md_Avx_BitSelect_VarVarVarVar(const STATEMENT& statement)
+{
+	auto dst = statement.dst->GetSymbol().get();
+	auto src1 = statement.src1->GetSymbol().get();
+	auto src2 = statement.src2->GetSymbol().get();
+	auto src3 = statement.src3->GetSymbol().get();
+
+	auto trueRegister = CX86Assembler::xMM0;
+	auto falseRegister = CX86Assembler::xMM1;
+	auto src3Register = PrepareSymbolRegisterUseMdAvx(src3, CX86Assembler::xMM2);
+	auto dstRegister = PrepareSymbolRegisterDefMd(dst, CX86Assembler::xMM3);
+
+	m_assembler.VpandVo(trueRegister, src3Register, MakeVariable128SymbolAddress(src1));
+	m_assembler.VpandnVo(falseRegister, src3Register, MakeVariable128SymbolAddress(src2));
+
+	m_assembler.VporVo(dstRegister, trueRegister, CX86Assembler::MakeXmmRegisterAddress(falseRegister));
+	CommitSymbolRegisterMdAvx(dst, dstRegister);
+}
+
 void CCodeGen_x86::Emit_Md_Avx_Abs_VarVar(const STATEMENT& statement)
 {
 	auto dst = statement.dst->GetSymbol().get();
@@ -882,9 +901,10 @@ CCodeGen_x86::CONSTMATCHER CCodeGen_x86::g_mdAvxConstMatchers[] =
 	{ OP_MD_MAX_H, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_MAXH> },
 	{ OP_MD_MAX_W, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_MAXW> },
 
-	{ OP_MD_AND, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_AND> },
-	{ OP_MD_OR,  MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_OR>  },
-	{ OP_MD_XOR, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_XOR> },
+	{ OP_MD_AND,       MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL,         &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_AND>    },
+	{ OP_MD_BITSELECT, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, &CCodeGen_x86::Emit_Md_Avx_BitSelect_VarVarVarVar },
+	{ OP_MD_OR,        MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL,         &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_OR>     },
+	{ OP_MD_XOR,       MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL,         &CCodeGen_x86::Emit_Md_Avx_VarVarVar<MDOP_XOR>    },
 
 	{ OP_MD_NOT, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, MATCH_NIL, &CCodeGen_x86::Emit_Md_Avx_Not_VarVar },
 
