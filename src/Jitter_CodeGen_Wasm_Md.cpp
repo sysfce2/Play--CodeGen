@@ -792,6 +792,24 @@ void CCodeGen_Wasm::Emit_Md_ExpandW_MemMemCst(const STATEMENT& statement)
 	CommitSymbol(dst);
 }
 
+void CCodeGen_Wasm::Emit_Md_BitSelect_MemMemMemMem(const STATEMENT& statement)
+{
+	auto dst = statement.dst->GetSymbol().get();
+	auto src1 = statement.src1->GetSymbol().get();
+	auto src2 = statement.src2->GetSymbol().get();
+	auto src3 = statement.src3->GetSymbol().get();
+
+	PrepareSymbolDef(dst);
+	PrepareSymbolUse(src1);
+	PrepareSymbolUse(src2);
+	PrepareSymbolUse(src3);
+
+	m_functionStream.Write8(Wasm::INST_PREFIX_SIMD);
+	m_functionStream.Write8(Wasm::INST_V128_BITSELECT);
+
+	CommitSymbol(dst);
+}
+
 void CCodeGen_Wasm::Emit_Md_Srl256_MemMemVar(const STATEMENT& statement)
 {
 	auto dst = statement.dst->GetSymbol().get();
@@ -965,6 +983,7 @@ CCodeGen_Wasm::CONSTMATCHER CCodeGen_Wasm::g_mdConstMatchers[] =
 	{ OP_MD_CMPGT_S,     MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_MEMORY128,     MATCH_NIL,      &CCodeGen_Wasm::Emit_Md_MemMemMem<Wasm::INST_F32x4_GT>        },
 
 	{ OP_MD_AND,         MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_MEMORY128,     MATCH_NIL,      &CCodeGen_Wasm::Emit_Md_MemMemMem<Wasm::INST_V128_AND>        },
+	{ OP_MD_BITSELECT,   MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_MEMORY128,     MATCH_MEMORY128,&CCodeGen_Wasm::Emit_Md_BitSelect_MemMemMemMem                },
 	{ OP_MD_OR,          MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_MEMORY128,     MATCH_NIL,      &CCodeGen_Wasm::Emit_Md_MemMemMem<Wasm::INST_V128_OR>         },
 	{ OP_MD_XOR,         MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_MEMORY128,     MATCH_NIL,      &CCodeGen_Wasm::Emit_Md_MemMemMem<Wasm::INST_V128_XOR>        },
 	{ OP_MD_NOT,         MATCH_MEMORY128,      MATCH_MEMORY128,      MATCH_NIL,           MATCH_NIL,      &CCodeGen_Wasm::Emit_Md_MemMem<Wasm::INST_V128_NOT>           },
