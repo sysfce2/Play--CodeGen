@@ -739,6 +739,7 @@ namespace Jitter
 		void Emit_Md_ExpandW_MemMem(const STATEMENT&);
 		void Emit_Md_ExpandW_MemCst(const STATEMENT&);
 		void Emit_Md_ExpandW_VarVarCst(const STATEMENT&);
+		void Emit_Md_BitSelect_MemMemMemMem(const STATEMENT&);
 
 		void Emit_Md_ClampS_MemMem(const STATEMENT&);
 
