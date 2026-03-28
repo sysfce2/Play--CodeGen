@@ -1017,6 +1017,29 @@ void CCodeGen_x86::Emit_Md_ExpandW_VarVarCst(const STATEMENT& statement)
 	CommitSymbolRegisterMdSse(dst, dstRegister);
 }
 
+void CCodeGen_x86::Emit_Md_BitSelect_VarVarVarVar(const STATEMENT& statement)
+{
+	auto dst = statement.dst->GetSymbol().get();
+	auto src1 = statement.src1->GetSymbol().get();
+	auto src2 = statement.src2->GetSymbol().get();
+	auto src3 = statement.src3->GetSymbol().get();
+
+	auto trueRegister = CX86Assembler::xMM0;
+	auto falseRegister = CX86Assembler::xMM1;
+
+	//This could be slightly improved if dst is a register and we know src1 != dst or src2 != dst
+
+	m_assembler.MovdqaVo(trueRegister, MakeVariable128SymbolAddress(src3));
+	m_assembler.MovdqaVo(falseRegister, CX86Assembler::MakeXmmRegisterAddress(trueRegister));
+
+	m_assembler.PandVo(trueRegister, MakeVariable128SymbolAddress(src1));
+	m_assembler.PandnVo(falseRegister, MakeVariable128SymbolAddress(src2));
+
+	m_assembler.PorVo(trueRegister, CX86Assembler::MakeXmmRegisterAddress(falseRegister));
+
+	m_assembler.MovdqaVo(MakeVariable128SymbolAddress(dst), trueRegister);
+}
+
 void CCodeGen_x86::Emit_Md_Srl256_VarMem(CSymbol* dst, CSymbol* src1, const CX86Assembler::CAddress& offsetAddress)
 {
 	auto offsetRegister = CX86Assembler::rAX;
@@ -1213,6 +1236,8 @@ CCodeGen_x86::CONSTMATCHER CCodeGen_x86::g_mdSseConstMatchers[] =
 	{ OP_MD_EXPAND_W, MATCH_VARIABLE128, MATCH_CONSTANT, MATCH_NIL, MATCH_NIL, &CCodeGen_x86::Emit_Md_ExpandW_VarCst },
 
 	{ OP_MD_EXPAND_W, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_CONSTANT, MATCH_NIL, &CCodeGen_x86::Emit_Md_ExpandW_VarVarCst },
+
+	{ OP_MD_BITSELECT, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, &CCodeGen_x86::Emit_Md_BitSelect_VarVarVarVar },
 
 	{ OP_MD_PACK_HB, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_PackHB_VarVarVar },
 	{ OP_MD_PACK_WH, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_VARIABLE128, MATCH_NIL, &CCodeGen_x86::Emit_Md_PackWH_VarVarVar },
